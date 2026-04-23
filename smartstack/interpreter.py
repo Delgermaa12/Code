@@ -1,10 +1,3 @@
-"""
-SmartStack Interpreter
-AST + Runtime State → үр дүн
-
-Runtime State = (Stack, Dictionary, Storage, Output)
-"""
-
 from typing import List, Any, Dict, Optional
 from dataclasses import dataclass, field
 from .ast_nodes import (
@@ -15,7 +8,6 @@ from .ast_nodes import (
 )
 
 
-# ─── Runtime Errors ──────────────────────────────────────────
 class SmartStackError(Exception):
     """SmartStack runtime алдааны суурь класс"""
     pass
@@ -39,12 +31,7 @@ class InvalidIfOperandError(SmartStackError):
     pass
 
 
-# ─── Levenshtein Distance ────────────────────────────────────
 def levenshtein(s: str, t: str) -> int:
-    """
-    Levenshtein зайг тооцоолно — Diagnostic давхаргад ашиглана.
-    Dynamic Programming алгоритм.
-    """
     m, n = len(s), len(t)
     dp = [[0] * (n + 1) for _ in range(m + 1)]
 
@@ -67,9 +54,6 @@ def levenshtein(s: str, t: str) -> int:
 
 
 def suggest(unknown: str, dictionary: Dict) -> Optional[str]:
-    """
-    Threshold <= 2 бол хамгийн ойр үгийг буцаана.
-    """
     best_word, best_dist = None, float('inf')
     for word in dictionary:
         d = levenshtein(unknown, word)
@@ -107,8 +91,6 @@ class State:
                 f"стекд {len(self.stack)} байна"
             )
 
-
-# ─── Built-in help text ──────────────────────────────────────
 HELP_TEXT = """
 ╔══════════════════════════════════════════════════════════╗
 ║            SmartStack — Командын тайлбар                ║
@@ -131,16 +113,14 @@ HELP_TEXT = """
 """
 
 
-# ─── Interpreter ─────────────────────────────────────────────
 class Interpreter:
     def __init__(self):
         self.state = State()
-        # Built-in word dictionary-г эхлүүлнэ
         self._init_builtins()
 
     def _init_builtins(self):
         """Built-in word-уудыг dictionary-д бүртгэнэ"""
-        pass  # Built-in-ууд evalBuiltin-д шууд зохицуулагдана
+        pass
 
     def run(self, source: str) -> State:
         """Source code-ийг гүйцэтгэж State буцаана"""
@@ -149,12 +129,10 @@ class Interpreter:
         self.eval_program(ast)
         return self.state
 
-    # ─── Program ─────────────────────────────────────────────
     def eval_program(self, program: ProgramNode):
         for node in program.body:
             self.eval_node(node)
 
-    # ─── Node dispatch ───────────────────────────────────────
     def eval_node(self, node: Node):
         if isinstance(node, NumberNode):
             self.state.push(node.value)
@@ -175,18 +153,15 @@ class Interpreter:
             self.eval_builtin(node.name, node)
 
         elif isinstance(node, DefinitionNode):
-            # Word-ийг dictionary-д бүртгэнэ, гүйцэтгэхгүй
             self.state.dictionary[node.name] = node.body
 
         elif isinstance(node, WordNode):
             self.eval_word(node)
 
         elif isinstance(node, BlockNode):
-            # Блокийг quotation байдлаар стек дээр тавина
             self.state.push(node)
 
         elif isinstance(node, ListNode):
-            # List literal үүсгэнэ
             lst = [self._materialize_literal(e) for e in node.elements]
             self.state.push(lst)
 
@@ -199,13 +174,11 @@ class Interpreter:
         if isinstance(node, BooleanNode): return node.value
         raise SmartStackError(f"List дотор literal бус node байна: {type(node).__name__}")
 
-    # ─── Operators ───────────────────────────────────────────
     def eval_operator(self, op: str, node: Node):
         self.state.require_n(2, op)
         b = self.state.pop(op)
         a = self.state.pop(op)
 
-        # Төрөл шалгах
         if op in ('+', '-', '*', '/') and not (
             isinstance(a, (int, float)) and isinstance(b, (int, float))
             and not isinstance(a, bool) and not isinstance(b, bool)
@@ -221,7 +194,6 @@ class Interpreter:
         elif op == '/':
             if b == 0:
                 raise DivisionByZeroError("Division by Zero: тэгд хуваах боломжгүй")
-            # Бүхэл хуваарь үр дүн бүхэл хэлбэрт байна
             result = a / b
             self.state.push(int(result) if result == int(result) else result)
         elif op == '>': self.state.push(a > b)
@@ -230,7 +202,6 @@ class Interpreter:
         else:
             raise SmartStackError(f"Тодорхойгүй оператор: '{op}'")
 
-    # ─── Stack Operations ────────────────────────────────────
     def eval_stack_op(self, name: str, node: Node):
         if name == 'dup':
             a = self.state.pop('dup')
@@ -258,7 +229,6 @@ class Interpreter:
         else:
             raise SmartStackError(f"Тодорхойгүй stack op: '{name}'")
 
-    # ─── Built-ins ───────────────────────────────────────────
     def eval_builtin(self, name: str, node: Node):
         if name == '.':
             val = self.state.pop('.')
@@ -347,21 +317,16 @@ class Interpreter:
             print(HELP_TEXT)
 
         elif name == 'print':
-            # Alias for '.'
             self.eval_builtin('.', node)
 
         else:
             raise SmartStackError(f"Тодорхойгүй builtin: '{name}'")
-
-    # ─── User-defined Word ───────────────────────────────────
     def eval_word(self, node: WordNode):
         name = node.name
         if name in self.state.dictionary:
             for sub in self.state.dictionary[name]:
                 self.eval_node(sub)
         else:
-            # Diagnostic: Did you mean?
-            # Built-in болон хэрэглэгчийн word-уудыг хамтад нь харьцуулна
             all_words = dict.fromkeys(
                 list(self.state.dictionary.keys()) +
                 ['dup', 'swap', 'drop', 'over', 'if', 'store', 'load',
@@ -373,7 +338,6 @@ class Interpreter:
                 msg += f"\nDid you mean: '{hint}' ?"
             raise UnknownWordError(msg)
 
-    # ─── Formatting ──────────────────────────────────────────
     def _format_value(self, val: Any) -> str:
         if isinstance(val, bool):
             return 'true' if val else 'false'
@@ -386,7 +350,6 @@ class Interpreter:
         return str(val)
 
 
-# ─── Convenience ─────────────────────────────────────────────
 def run(source: str) -> State:
     """Source code-ийг шууд гүйцэтгэх"""
     interp = Interpreter()

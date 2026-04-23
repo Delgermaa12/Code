@@ -1,11 +1,6 @@
-"""
-SmartStack AST Node тодорхойлолтууд
-"""
 from dataclasses import dataclass, field
 from typing import List, Any, Union
 
-
-# ─── Base ────────────────────────────────────────────────────
 @dataclass
 class Node:
     """Бүх AST node-уудын суурь класс"""
@@ -16,7 +11,6 @@ class Node:
         return f"{self.__class__.__name__}()"
 
 
-# ─── Literals ────────────────────────────────────────────────
 @dataclass
 class NumberNode(Node):
     value: Union[int, float] = 0
@@ -41,7 +35,6 @@ class BooleanNode(Node):
         return f"BooleanNode({self.value})"
 
 
-# ─── Operations ──────────────────────────────────────────────
 @dataclass
 class OperatorNode(Node):
     symbol: str = ""
@@ -66,7 +59,6 @@ class BuiltinNode(Node):
         return f"BuiltinNode({self.name!r})"
 
 
-# ─── Word ────────────────────────────────────────────────────
 @dataclass
 class WordNode(Node):
     name: str = ""
@@ -74,8 +66,6 @@ class WordNode(Node):
     def __repr__(self):
         return f"WordNode({self.name!r})"
 
-
-# ─── Compound ────────────────────────────────────────────────
 @dataclass
 class BlockNode(Node):
     body: List[Node] = field(default_factory=list)
@@ -101,7 +91,6 @@ class DefinitionNode(Node):
         return f"DefinitionNode({self.name!r}, [{', '.join(repr(n) for n in self.body)}])"
 
 
-# ─── Root ────────────────────────────────────────────────────
 @dataclass
 class ProgramNode(Node):
     body: List[Node] = field(default_factory=list)

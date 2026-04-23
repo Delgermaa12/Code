@@ -1,8 +1,3 @@
-"""
-SmartStack Test Suite
-Positive (10+) болон Negative тестүүд
-"""
-
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,9 +9,6 @@ from smartstack.interpreter import (
 )
 from smartstack.lexer import LexerError
 from smartstack.parser import ParseError
-
-
-# ─── Test helpers ────────────────────────────────────────────
 passed = 0
 failed = 0
 
@@ -64,20 +56,14 @@ def section(title: str):
     print(f"{'─'*55}")
 
 
-# ═══════════════════════════════════════════════════════════════
-#  POSITIVE TESTS
-# ═══════════════════════════════════════════════════════════════
-
 section("1. Арифметик үйлдлүүд (Arithmetic)")
 
 test("T01 — Нийлбэр",          "3 4 + .",            ['"7"' if False else "7"])
-# Fix: output format
 def run_and_output(source):
     interp = Interpreter()
     state  = interp.run(source)
     return state.output
 
-# Re-implement test for exact output matching
 def test2(name, source, expected_outputs, expected_stack=None):
     global passed, failed
     try:
@@ -117,12 +103,11 @@ test2("T11 — Постфикс (3+4×5=23)",    "3 4 5 * + .",   ["23"])
 
 section("2. Стекийн үйлдлүүд (Stack Operations)")
 test2("T12 — dup: 10²=100",           "10 dup * .",    ["100"])
-test2("T13 — swap: 1 2 swap → 2 1",   "1 2 swap . .",  ["1", "2"])  # swap: стек [2,1] болно, . → 1 (орой), дараа → 2
+test2("T13 — swap: 1 2 swap → 2 1",   "1 2 swap . .",  ["1", "2"])
 test2("T14 — drop: 5 drop 9",         "5 drop 9 .",    ["9"])
 test2("T15 — over: 3 4 over",         "3 4 over . . .",["3", "4", "3"])
 test2("T16 — dup dup + (4+4=8)",      "4 dup + .",     ["8"])
-test2("T17 — Олон стек үйлдэл",       "1 2 3 drop swap . .", ["1", "2"])  # 3 drop→[1,2], swap→[2,1], .→1, .→2
-
+test2("T17 — Олон стек үйлдэл",       "1 2 3 drop swap . .", ["1", "2"])
 section("3. Word тодорхойлолт (Word Definition)")
 test2("T18 — square: 5²=25",
       ": square dup * ; 5 square .", ["25"])
@@ -163,7 +148,6 @@ test2("T32 — map: [10 20 30] × 2",
 test2("T33 — filter: >20 байх утгууд",
       "[ 10 20 30 40 ] { 20 > } filter .", ["[ 30 40 ]"])
 
-# Alternative filter test via manual check
 interp_tmp = Interpreter()
 interp_tmp.run("[ 10 30 50 ] { 20 > } filter .")
 if interp_tmp.state.output == ["[ 30 50 ]"]:
@@ -190,12 +174,7 @@ test2("T35 — Олон word + storage",
 5 double "d" store
 5 triple "t" store
 "d" load "t" load + .""",
-      ["25"])  # 10 + 15 = 25
-
-
-# ═══════════════════════════════════════════════════════════════
-#  NEGATIVE TESTS — Алдааны нөхцөлүүд
-# ═══════════════════════════════════════════════════════════════
+      ["25"]) 
 
 section("8. Stack Underflow алдаанууд")
 test_error("N01 — + хоосон стек дээр",       "+",           StackUnderflowError)
@@ -234,8 +213,6 @@ test_error("N20 — хаагдаагүй block",   '{ 1 2 +',       ParseError)
 test_error("N21 — хаагдаагүй list",    '[ 1 2 3',       ParseError)
 test_error("N22 — definition нэргүй",  ': dup * ;',     ParseError)
 
-
-# ─── Levenshtein тест ────────────────────────────────────────
 section("15. Levenshtein Diagnostic")
 
 from smartstack.interpreter import levenshtein, suggest
@@ -257,7 +234,6 @@ test_lev("",    "abc",  3)
 test_lev("abc", "",     3)
 test_lev("abc", "abc",  0)
 
-# suggest() функц
 dict_sample = {"tax": [], "swap": [], "dup": [], "drop": [], "over": []}
 s1 = suggest("txx",    dict_sample)
 s2 = suggest("swp",    dict_sample)
@@ -277,7 +253,6 @@ test_suggest("swp",    "swap", s2)
 test_suggest("abcxyz", None,   s3)
 
 
-# ─── Summary ─────────────────────────────────────────────────
 total = passed + failed
 print(f"\n{'═'*55}")
 print(f"  НИЙТ: {total} тест  |   {passed} амжилттай  |   {failed} амжилтгүй")

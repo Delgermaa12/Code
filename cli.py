@@ -1,18 +1,9 @@
-#!/usr/bin/env python3
-"""
-SmartStack CLI
-Хэрэглээ:
-  python cli.py run example.ss
-  python cli.py repl
-  python cli.py test
-"""
-
 import sys
 import os
 try:
-    import readline  # REPL history support (Linux/Mac)
+    import readline
 except ImportError:
-    pass  # Windows-д байхгүй, зүгээр
+    pass
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -38,7 +29,7 @@ def cmd_run(filepath: str):
         interp = Interpreter()
         interp.run(source)
     except (SmartStackError, LexerError, ParseError) as e:
-        print(f"\n⚠️  {e}")
+        print(f"\n  {e}")
         sys.exit(1)
 
 
@@ -63,7 +54,6 @@ def cmd_repl():
         buf.append(line)
         source = ' '.join(buf)
 
-        # Нээлттэй { эсвэл [ байвал үргэлжлүүлэн авна
         if source.count('{') > source.count('}') or \
            source.count('[') > source.count(']') or \
            source.count(':') > source.count(';'):
