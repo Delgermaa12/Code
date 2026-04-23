@@ -31,16 +31,16 @@ def test(name: str, source: str, expected_output: list, expected_stack: list = N
         ok_stack = (expected_stack is None) or (state.stack == expected_stack)
 
         if ok_out and ok_stack:
-            print(f"  ✅ PASS  {name}")
+            print(f"  PASS  {name}")
             passed += 1
         else:
-            print(f"  ❌ FAIL  {name}")
+            print(f" FAIL  {name}")
             print(f"         Оролт   : {source.strip()}")
             print(f"         Хүлээсэн: output={expected_output}, stack={expected_stack}")
             print(f"         Авсан   : output={actual}, stack={state.stack}")
             failed += 1
     except Exception as e:
-        print(f"  ❌ FAIL  {name}  → Exception: {e}")
+        print(f"  FAIL  {name}  → Exception: {e}")
         failed += 1
 
 
@@ -48,13 +48,13 @@ def test_error(name: str, source: str, error_class):
     global passed, failed
     try:
         run(source)
-        print(f"  ❌ FAIL  {name}  → Алдаа гараагүй (гарах ёстой байсан)")
+        print(f"  FAIL  {name}  → Алдаа гараагүй (гарах ёстой байсан)")
         failed += 1
     except error_class as e:
-        print(f"  ✅ PASS  {name}  → {error_class.__name__}: {e}")
+        print(f"  PASS  {name}  → {error_class.__name__}: {e}")
         passed += 1
     except Exception as e:
-        print(f"  ❌ FAIL  {name}  → Буруу алдааны төрөл: {type(e).__name__}: {e}")
+        print(f"  FAIL  {name}  → Буруу алдааны төрөл: {type(e).__name__}: {e}")
         failed += 1
 
 
@@ -87,10 +87,10 @@ def test2(name, source, expected_outputs, expected_stack=None):
         ok_out   = actual == expected_outputs
         ok_stack = (expected_stack is None) or (state.stack == expected_stack)
         if ok_out and ok_stack:
-            print(f"  ✅ PASS  {name}")
+            print(f"  PASS  {name}")
             passed += 1
         else:
-            print(f"  ❌ FAIL  {name}")
+            print(f"  FAIL  {name}")
             print(f"         Оролт   : {repr(source.strip())}")
             print(f"         Хүлээсэн output: {expected_outputs}")
             print(f"         Авсан output   : {actual}")
@@ -99,7 +99,7 @@ def test2(name, source, expected_outputs, expected_stack=None):
                 print(f"         Авсан stack    : {state.stack}")
             failed += 1
     except Exception as e:
-        print(f"  ❌ FAIL  {name}  → Exception: {type(e).__name__}: {e}")
+        print(f"  FAIL  {name}  → Exception: {type(e).__name__}: {e}")
         failed += 1
 
 section("1. Арифметик үйлдлүүд (Arithmetic)")
@@ -167,10 +167,10 @@ test2("T33 — filter: >20 байх утгууд",
 interp_tmp = Interpreter()
 interp_tmp.run("[ 10 30 50 ] { 20 > } filter .")
 if interp_tmp.state.output == ["[ 30 50 ]"]:
-    print("  ✅ PASS  T33b — filter: [10 30 50] filter >20 = [30 50]")
+    print("  PASS  T33b — filter: [10 30 50] filter >20 = [30 50]")
     passed += 1
 else:
-    print(f"  ❌ FAIL  T33b — filter output: {interp_tmp.state.output}")
+    print(f"  FAIL  T33b — filter output: {interp_tmp.state.output}")
     failed += 1
 
 section("7. Нэгдсэн жишээ программ (Integration)")
@@ -244,10 +244,10 @@ def test_lev(s, t, expected):
     global passed, failed
     result = levenshtein(s, t)
     if result == expected:
-        print(f"  ✅ PASS  levenshtein({s!r}, {t!r}) = {result}")
+        print(f"   PASS  levenshtein({s!r}, {t!r}) = {result}")
         passed += 1
     else:
-        print(f"  ❌ FAIL  levenshtein({s!r}, {t!r}) = {result}, хүлээсэн {expected}")
+        print(f"   FAIL  levenshtein({s!r}, {t!r}) = {result}, хүлээсэн {expected}")
         failed += 1
 
 test_lev("txx", "tax",  1)
@@ -266,10 +266,10 @@ s3 = suggest("abcxyz", dict_sample)
 def test_suggest(input_word, expected, result):
     global passed, failed
     if result == expected:
-        print(f"  ✅ PASS  suggest({input_word!r}) = {result!r}")
+        print(f"   PASS  suggest({input_word!r}) = {result!r}")
         passed += 1
     else:
-        print(f"  ❌ FAIL  suggest({input_word!r}) = {result!r}, хүлээсэн {expected!r}")
+        print(f"   FAIL  suggest({input_word!r}) = {result!r}, хүлээсэн {expected!r}")
         failed += 1
 
 test_suggest("txx",    "tax",  s1)
@@ -280,9 +280,9 @@ test_suggest("abcxyz", None,   s3)
 # ─── Summary ─────────────────────────────────────────────────
 total = passed + failed
 print(f"\n{'═'*55}")
-print(f"  НИЙТ: {total} тест  |  ✅ {passed} амжилттай  |  ❌ {failed} амжилтгүй")
+print(f"  НИЙТ: {total} тест  |   {passed} амжилттай  |   {failed} амжилтгүй")
 print(f"{'═'*55}")
 if failed == 0:
-    print("  🎉 Бүх тест амжилттай өнгөрлөө!")
+    print("   Бүх тест амжилттай өнгөрлөө!")
 else:
-    print(f"  ⚠️  {failed} тест амжилтгүй боллоо.")
+    print(f"    {failed} тест амжилтгүй боллоо.")

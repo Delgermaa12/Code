@@ -78,8 +78,6 @@ def suggest(unknown: str, dictionary: Dict) -> Optional[str]:
             best_word = word
     return best_word if best_dist <= 2 else None
 
-
-# ─── Runtime State ───────────────────────────────────────────
 @dataclass
 class State:
     stack:      List[Any]       = field(default_factory=list)
