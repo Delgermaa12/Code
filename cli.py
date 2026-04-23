@@ -44,11 +44,11 @@ def cmd_repl():
             prompt = "ss> " if not buf else "... "
             line = input(prompt).strip()
         except (KeyboardInterrupt, EOFError):
-            print("\nТантай уулзтал!")
+            print("\nБаяртай!")
             break
 
         if line.lower() in ('exit', 'quit'):
-            print("Тантай уулзтал!")
+            print("Баяртай!")
             break
 
         buf.append(line)

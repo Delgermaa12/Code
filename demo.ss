@@ -35,3 +35,36 @@ if .             # Output: "large"
 
 # ── Жишээ 7: Filter (Phase 2) ───────────────────────────────
 [ 1 5 10 15 20 ] { 10 > } filter .   # Output: [ 15 20 ]
+
+
+# Жишээ 8: Word-уудыг давхар ашиглаж томъёо хийх
+: square dup * ;
+: quad square square ;
+: eighth quad double ;
+
+2 quad .                 # Output: 16
+3 eighth .               # Output: 24
+
+
+
+# Sales analytics pipeline
+
+100 "threshold" store
+: high-sale "threshold" load >;
+: tax 10 * 100 / ;
+: add-tax dup tax + ;
+[ 50 120 200 80 300 40 ] { high-sale } filter { add-tax } map .
+
+# Output: [ 132 220 330 ]
+
+
+
+
+# Shopping cart system
+
+: tax 10 * 100 / ;
+: total dup tax + ;
+[ 100 200 300 ] { total } map .
+
+
+# Output: [ 110 220 330 ]
