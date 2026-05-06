@@ -1,6 +1,3 @@
-"""
-SmartStack — Stack-based scripting language
-"""
 from .lexer       import Lexer, Token, TokenType, LexerError
 from .ast_nodes   import *
 from .parser      import Parser, parse, ParseError

@@ -1,0 +1,10 @@
+let score = 85;
+
+print("Student score:");
+print(score);
+
+if (score > 60) {
+    print("PASSED");
+} else {
+    print("FAILED");
+}

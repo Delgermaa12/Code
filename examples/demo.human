@@ -1,0 +1,10 @@
+set score to 85
+
+show "Student score:"
+show score
+
+if score is greater than 60
+show "PASSED"
+otherwise
+show "FAILED"
+end

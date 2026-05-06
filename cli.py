@@ -12,10 +12,8 @@ from smartstack.lexer import LexerError
 from smartstack.parser import ParseError
 
 BANNER = """
-╔══════════════════════════════════════════════╗
-║   SmartStack v1.0  — Stack-based language   ║
-║   'help' гэж бичнэ үү        Ctrl+C: гарах  ║
-╚══════════════════════════════════════════════╝
+Stack-based language
+'help' гэж бичнэ үү        Ctrl+C: гарах
 """
 
 def cmd_run(filepath: str):
