@@ -4,4 +4,5 @@ from .parser      import Parser, parse, ParseError
 from .interpreter import Interpreter, run, SmartStackError
 
 __all__ = ['Lexer', 'Parser', 'Interpreter', 'parse', 'run', 'SmartStackError']
+#helnii version
 __version__ = '1.0.0'

@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import List, Any
-
+# raw textiig token bolgoh
 
 class TokenType(Enum):
     NUMBER      = auto()
@@ -19,8 +19,7 @@ class TokenType(Enum):
     RBRACKET    = auto()
     DOT         = auto()
     EOF         = auto()
-
-
+#tustaa set eer burtgeh
 OPERATORS  = {'+', '-', '*', '/', '>', '<', '='}
 STACK_OPS  = {'dup', 'swap', 'drop', 'over'}
 BUILTINS   = {'if', 'store', 'load', 'map', 'filter', 'help', 'print', 'input'}

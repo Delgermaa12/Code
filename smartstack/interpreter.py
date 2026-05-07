@@ -6,7 +6,8 @@ from .ast_nodes import (
     OperatorNode, StackOpNode, BuiltinNode,
     WordNode, BlockNode, ListNode
 )
-
+#AST nodeuudiig 1 1 eer ni ajilluulna
+#state dotor 4 gol zuil baina. stack dictionary storage output
 
 class SmartStackError(Exception):
     """SmartStack runtime алдааны суурь класс"""

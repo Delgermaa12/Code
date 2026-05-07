@@ -44,13 +44,14 @@ class OperatorNode(Node):
 
 
 @dataclass
+#dup swap drop over
 class StackOpNode(Node):
     name: str = ""
 
     def __repr__(self):
         return f"StackOpNode({self.name!r})"
 
-
+#. store load if input
 @dataclass
 class BuiltinNode(Node):
     name: str = ""
@@ -81,7 +82,7 @@ class ListNode(Node):
     def __repr__(self):
         return f"ListNode([{', '.join(repr(n) for n in self.elements)}])"
 
-
+# :square dup * ;
 @dataclass
 class DefinitionNode(Node):
     name: str = ""
@@ -90,7 +91,7 @@ class DefinitionNode(Node):
     def __repr__(self):
         return f"DefinitionNode({self.name!r}, [{', '.join(repr(n) for n in self.body)}])"
 
-
+# buh programmiin node
 @dataclass
 class ProgramNode(Node):
     body: List[Node] = field(default_factory=list)

@@ -1,5 +1,42 @@
 import re
+from smartstack.interpreter import suggest
+HUMAN_KEYWORDS = {
+    "set": [],
+    "ask": [],
+    "show": [],
+    "calculate": [],
+    "if": [],
+    "otherwise": [],
+    "end": [],
+}
 
+MN_KEYWORDS = {
+    "гэдэг": [],
+    "асуу": [],
+    "харуул": [],
+    "бод": [],
+    "хэрэв": [],
+    "эсвэл": [],
+    "төгсөв": [],
+}
+
+CODE_KEYWORDS = {
+    "let": [],
+    "print": [],
+    "input": [],
+    "if": [],
+    "else": [],
+}
+
+def syntax_error_with_suggestion(style: str, line: str, keywords: dict):
+    first = line.strip().split()[0] if line.strip() else ""
+    hint = suggest(first, keywords)
+
+    msg = f"Unknown {style} syntax: {line}"
+    if hint:
+        msg += f"\nDid you mean: '{hint}' ?"
+
+    raise Exception(msg)
 def detect_style(filename: str) -> str:
     if filename.endswith(".human"):
         return "human"
@@ -27,7 +64,6 @@ def value_token(x: str) -> str:
     if re.fullmatch(r"-?\d+(\.\d+)?", x):
         return x
     return f'"{x}" load'
-
 
 def expr_to_stack(expr: str, lang="human") -> str:
     words = expr.strip().split()
@@ -129,7 +165,7 @@ def desugar_human(source: str) -> str:
             result.append("if")
             continue
 
-        raise Exception(f"Unknown human syntax: {line}")
+        syntax_error_with_suggestion("human", line, HUMAN_KEYWORDS)
 
     return "\n".join(result)
 
@@ -192,7 +228,7 @@ def desugar_mongolian(source: str) -> str:
             result.append("if")
             continue
 
-        raise Exception(f"Unknown mongolian syntax: {line}")
+        syntax_error_with_suggestion("mongolian", line, MN_KEYWORDS)
 
     return "\n".join(result)
 
@@ -263,6 +299,6 @@ def desugar_code_like(source: str) -> str:
             result.append("if")
             continue
 
-        raise Exception(f"Unknown code-like syntax: {line}")
+        syntax_error_with_suggestion("code-like", line, CODE_KEYWORDS)
 
     return "\n".join(result)
