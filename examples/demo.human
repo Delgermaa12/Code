@@ -1,6 +1,5 @@
-show "===== SALARY CALCULATION SYSTEM ====="
+show "===== SALARY SYSTEM ====="
 
-ask employee_name
 ask worked_hours
 ask hourly_rate
 ask penalty
@@ -11,10 +10,25 @@ calculate salary_after_social as gross_salary minus social_insurance
 calculate income_tax as salary_after_social times 0.10
 calculate net_salary as salary_after_social minus income_tax minus penalty
 
-show "===== RESULT ====="
-show employee_name
+show "Gross salary:"
 show gross_salary
+
+show "Social insurance:"
 show social_insurance
+
+show "Income tax:"
 show income_tax
+
+show "Penalty:"
 show penalty
+
+show "Net salary:"
 show net_salary
+
+if penalty is greater than 0
+show "Penalty applied"
+otherwise
+show "No penalty"
+end
+
+show "===== END ====="

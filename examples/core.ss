@@ -1,6 +1,5 @@
-"===== SALARY CALCULATION SYSTEM =====" .
+"===== SALARY SYSTEM =====" .
 
-"employee_name" input
 "worked_hours" input
 "hourly_rate" input
 "penalty" input
@@ -32,17 +31,13 @@
 -
 "net_salary" store
 
-"===== RESULT =====" .
-"Employee:" .
-"employee_name" load .
-
 "Gross salary:" .
 "gross_salary" load .
 
-"Social insurance 11.5%:" .
+"Social insurance:" .
 "social_insurance" load .
 
-"Income tax 10%:" .
+"Income tax:" .
 "income_tax" load .
 
 "Penalty:" .
@@ -50,3 +45,12 @@
 
 "Net salary:" .
 "net_salary" load .
+
+"penalty" load
+0
+>
+{ "Penalty applied" . }
+{ "No penalty" . }
+if
+
+"===== END =====" .

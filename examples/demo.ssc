@@ -1,6 +1,5 @@
-print("===== SALARY CALCULATION SYSTEM =====");
+print("===== SALARY SYSTEM =====");
 
-input(employee_name);
 input(worked_hours);
 input(hourly_rate);
 input(penalty);
@@ -11,10 +10,25 @@ let salary_after_social = gross_salary - social_insurance;
 let income_tax = salary_after_social * 0.10;
 let net_salary = salary_after_social - income_tax - penalty;
 
-print("===== RESULT =====");
-print(employee_name);
+print("Gross salary:");
 print(gross_salary);
+
+print("Social insurance:");
 print(social_insurance);
+
+print("Income tax:");
 print(income_tax);
+
+print("Penalty:");
 print(penalty);
+
+print("Net salary:");
 print(net_salary);
+
+if (penalty > 0) {
+    print("Penalty applied");
+} else {
+    print("No penalty");
+}
+
+print("===== END =====");
