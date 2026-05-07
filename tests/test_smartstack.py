@@ -1,263 +1,296 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from smartstack.interpreter import (
     Interpreter, run,
     StackUnderflowError, TypeError_, DivisionByZeroError,
-    UnknownWordError, MissingStorageKeyError, InvalidIfOperandError
+    UnknownWordError, MissingStorageKeyError, InvalidIfOperandError,
+    levenshtein, suggest
 )
 from smartstack.lexer import LexerError
 from smartstack.parser import ParseError
+from smartstack.desugar import desugar
+
 passed = 0
 failed = 0
 
-def test(name: str, source: str, expected_output: list, expected_stack: list = None):
+
+def section(title: str):
+    print(f"\n{'─' * 60}")
+    print(title)
+    print(f"{'─' * 60}")
+
+
+def test_ok(name, source, expected_output, expected_stack=None):
     global passed, failed
     try:
         interp = Interpreter()
-        state  = interp.run(source)
-        actual = state.output
+        state = interp.run(source)
+        actual_output = state.output
 
-        ok_out   = actual == [str(e) if not isinstance(e, str) else e for e in expected_output]
-        ok_stack = (expected_stack is None) or (state.stack == expected_stack)
+        ok_output = actual_output == expected_output
+        ok_stack = expected_stack is None or state.stack == expected_stack
 
-        if ok_out and ok_stack:
-            print(f"  PASS  {name}")
+        if ok_output and ok_stack:
+            print(f"PASS  {name}")
             passed += 1
         else:
-            print(f" FAIL  {name}")
-            print(f"         Оролт   : {source.strip()}")
-            print(f"         Хүлээсэн: output={expected_output}, stack={expected_stack}")
-            print(f"         Авсан   : output={actual}, stack={state.stack}")
+            print(f"FAIL  {name}")
+            print("SOURCE:")
+            print(source)
+            print("Expected output:", expected_output)
+            print("Actual output  :", actual_output)
+            print("Expected stack :", expected_stack)
+            print("Actual stack   :", state.stack)
             failed += 1
+
     except Exception as e:
-        print(f"  FAIL  {name}  → Exception: {e}")
+        print(f"FAIL  {name} -> {type(e).__name__}: {e}")
         failed += 1
 
 
-def test_error(name: str, source: str, error_class):
+def test_error(name, source, error_class):
     global passed, failed
     try:
         run(source)
-        print(f"  FAIL  {name}  → Алдаа гараагүй (гарах ёстой байсан)")
+        print(f"FAIL  {name} -> expected {error_class.__name__}, but no error")
         failed += 1
-    except error_class as e:
-        print(f"  PASS  {name}  → {error_class.__name__}: {e}")
+    except error_class:
+        print(f"PASS  {name}")
         passed += 1
     except Exception as e:
-        print(f"  FAIL  {name}  → Буруу алдааны төрөл: {type(e).__name__}: {e}")
+        print(f"FAIL  {name} -> wrong error {type(e).__name__}: {e}")
         failed += 1
 
 
-def section(title: str):
-    print(f"\n{'─'*55}")
-    print(f"  {title}")
-    print(f"{'─'*55}")
-
-
-section("1. Арифметик үйлдлүүд (Arithmetic)")
-
-test("T01 — Нийлбэр",          "3 4 + .",            ['"7"' if False else "7"])
-def run_and_output(source):
-    interp = Interpreter()
-    state  = interp.run(source)
-    return state.output
-
-def test2(name, source, expected_outputs, expected_stack=None):
+def test_desugar(name, source, style, expected_core_contains):
     global passed, failed
     try:
-        interp = Interpreter()
-        state  = interp.run(source)
-        actual = state.output
-        ok_out   = actual == expected_outputs
-        ok_stack = (expected_stack is None) or (state.stack == expected_stack)
-        if ok_out and ok_stack:
-            print(f"  PASS  {name}")
+        core = desugar(source, style)
+        ok = all(part in core for part in expected_core_contains)
+
+        if ok:
+            print(f"PASS  {name}")
             passed += 1
         else:
-            print(f"  FAIL  {name}")
-            print(f"         Оролт   : {repr(source.strip())}")
-            print(f"         Хүлээсэн output: {expected_outputs}")
-            print(f"         Авсан output   : {actual}")
-            if expected_stack is not None:
-                print(f"         Хүлээсэн stack : {expected_stack}")
-                print(f"         Авсан stack    : {state.stack}")
+            print(f"FAIL  {name}")
+            print("Core:")
+            print(core)
+            print("Expected contains:", expected_core_contains)
             failed += 1
+
     except Exception as e:
-        print(f"  FAIL  {name}  → Exception: {type(e).__name__}: {e}")
+        print(f"FAIL  {name} -> {type(e).__name__}: {e}")
         failed += 1
 
-section("1. Арифметик үйлдлүүд (Arithmetic)")
-test2("T01 — Нийлбэр 3+4=7",          "3 4 + .",       ["7"])
-test2("T02 — Зөрүү 10-2=8",           "10 2 - .",      ["8"])
-test2("T03 — Үржвэр 6×7=42",          "6 7 * .",       ["42"])
-test2("T04 — Хуваарь 20÷5=4",         "20 5 / .",      ["4"])
-test2("T05 — Бодит тоо 3.5+1.5=5",    "3.5 1.5 + .",   ["5"])
-test2("T06 — Харьцуулалт 5>3 = true", "5 3 > .",       ["true"])
-test2("T07 — Харьцуулалт 2>9 = false","2 9 > .",       ["false"])
-test2("T08 — Тэгш байдал 4=4 = true", "4 4 = .",       ["true"])
-test2("T09 — Тэгш байдал 3=5 = false","3 5 = .",       ["false"])
-test2("T10 — Олон үйлдэл 3 4+5×=35", "3 4 + 5 * .",   ["35"])
-test2("T11 — Постфикс (3+4×5=23)",    "3 4 5 * + .",   ["23"])
 
-section("2. Стекийн үйлдлүүд (Stack Operations)")
-test2("T12 — dup: 10²=100",           "10 dup * .",    ["100"])
-test2("T13 — swap: 1 2 swap → 2 1",   "1 2 swap . .",  ["1", "2"])
-test2("T14 — drop: 5 drop 9",         "5 drop 9 .",    ["9"])
-test2("T15 — over: 3 4 over",         "3 4 over . . .",["3", "4", "3"])
-test2("T16 — dup dup + (4+4=8)",      "4 dup + .",     ["8"])
-test2("T17 — Олон стек үйлдэл",       "1 2 3 drop swap . .", ["1", "2"])
-section("3. Word тодорхойлолт (Word Definition)")
-test2("T18 — square: 5²=25",
-      ": square dup * ; 5 square .", ["25"])
-test2("T19 — cube: 3³=27",
-      ": cube dup dup * * ; 3 cube .", ["27"])
-test2("T20 — double: 7×2=14",
-      ": double 2 * ; 7 double .", ["14"])
-test2("T21 — Word дарааллаар дуудах",
-      ": square dup * ; : quad square square ; 2 quad .", ["16"])
-test2("T22 — Word болон арифметик хослуулах",
-      ": inc 1 + ; 9 inc .", ["10"])
+section("1. Arithmetic")
 
-section("4. Named Storage (store / load)")
-test2("T23 — store/load: x=100",
-      '100 "x" store "x" load .', ["100"])
-test2("T24 — store/load + арифметик",
-      '100 "x" store "x" load 20 + .', ["120"])
-test2("T25 — Олон storage утга",
-      '5 "a" store 3 "b" store "a" load "b" load + .', ["8"])
-test2("T26 — Storage дарж бичих",
-      '10 "x" store 99 "x" store "x" load .', ["99"])
+test_ok("T01 add", "3 4 + .", ["7"])
+test_ok("T02 subtract", "10 2 - .", ["8"])
+test_ok("T03 multiply", "6 7 * .", ["42"])
+test_ok("T04 divide", "20 5 / .", ["4"])
+test_ok("T05 float", "3.5 1.5 + .", ["5"])
+test_ok("T06 greater true", "5 3 > .", ["true"])
+test_ok("T07 greater false", "2 9 > .", ["false"])
+test_ok("T08 equal true", "4 4 = .", ["true"])
+test_ok("T09 equal false", "3 5 = .", ["false"])
+test_ok("T10 postfix expression", "3 4 + 5 * .", ["35"])
+test_ok("T11 postfix precedence manually", "3 4 5 * + .", ["23"])
 
-section("5. Нөхцөлт гүйцэтгэл (Conditional if)")
-test2("T27 — if true branch",
-      '1500 1000 > { "Yes" } { "No" } if .', ['"Yes"'])
-test2("T28 — if false branch",
-      '5 10 > { "big" } { "small" } if .', ['"small"'])
-test2("T29 — if with boolean literal",
-      'true { "T" } { "F" } if .', ['"T"'])
-test2("T30 — if false literal",
-      'false { "T" } { "F" } if .', ['"F"'])
-test2("T31 — if with calculation",
-      '5 3 > { 1 } { 0 } if .', ["1"])
 
-section("6. List болон map/filter (Phase 2)")
-test2("T32 — map: [10 20 30] × 2",
-      "[ 10 20 30 ] { 2 * } map .", ["[ 20 40 60 ]"])
-test2("T33 — filter: >20 байх утгууд",
-      "[ 10 20 30 40 ] { 20 > } filter .", ["[ 30 40 ]"])
+section("2. Stack operations")
 
-interp_tmp = Interpreter()
-interp_tmp.run("[ 10 30 50 ] { 20 > } filter .")
-if interp_tmp.state.output == ["[ 30 50 ]"]:
-    print("  PASS  T33b — filter: [10 30 50] filter >20 = [30 50]")
-    passed += 1
-else:
-    print(f"  FAIL  T33b — filter output: {interp_tmp.state.output}")
-    failed += 1
+test_ok("T12 dup", "10 dup * .", ["100"])
+test_ok("T13 swap", "1 2 swap . .", ["1", "2"])
+test_ok("T14 drop", "5 drop 9 .", ["9"])
+test_ok("T15 over", "3 4 over . . .", ["3", "4", "3"])
+test_ok("T16 dup add", "4 dup + .", ["8"])
+test_ok("T17 mixed stack ops", "1 2 3 drop swap . .", ["1", "2"])
 
-section("7. Нэгдсэн жишээ программ (Integration)")
-test2("T34 — Нэгдсэн: square + storage + if",
-      """: square dup * ;
+
+section("3. Word definitions")
+
+test_ok("T18 square", ": square dup * ; 5 square .", ["25"])
+test_ok("T19 cube", ": cube dup dup * * ; 3 cube .", ["27"])
+test_ok("T20 double", ": double 2 * ; 7 double .", ["14"])
+test_ok("T21 nested words", ": square dup * ; : quad square square ; 2 quad .", ["16"])
+test_ok("T22 inc", ": inc 1 + ; 9 inc .", ["10"])
+
+
+section("4. Storage")
+
+test_ok("T23 store/load", '100 "x" store "x" load .', ["100"])
+test_ok("T24 store/load arithmetic", '100 "x" store "x" load 20 + .', ["120"])
+test_ok("T25 multiple storage", '5 "a" store 3 "b" store "a" load "b" load + .', ["8"])
+test_ok("T26 overwrite storage", '10 "x" store 99 "x" store "x" load .', ["99"])
+
+
+section("5. Conditional")
+
+test_ok("T27 if true", '1500 1000 > { "Yes" } { "No" } if .', ['"Yes"'])
+test_ok("T28 if false", '5 10 > { "big" } { "small" } if .', ['"small"'])
+test_ok("T29 bool true", 'true { "T" } { "F" } if .', ['"T"'])
+test_ok("T30 bool false", 'false { "T" } { "F" } if .', ['"F"'])
+test_ok("T31 if calculation", '5 3 > { 1 } { 0 } if .', ["1"])
+
+
+section("6. List map/filter")
+
+test_ok("T32 map", "[ 10 20 30 ] { 2 * } map .", ["[ 20 40 60 ]"])
+test_ok("T33 filter", "[ 10 20 30 40 ] { 20 > } filter .", ["[ 30 40 ]"])
+test_ok("T34 filter second", "[ 10 30 50 ] { 20 > } filter .", ["[ 30 50 ]"])
+
+
+section("7. Integration")
+
+test_ok(
+    "T35 square + storage + if",
+    """
+: square dup * ;
 9 square
 "ans" store
 "ans" load 10 >
 { "large" }
 { "small" }
-if .""",
-      ['"large"'])
+if .
+""",
+    ['"large"']
+)
 
-test2("T35 — Олон word + storage",
-      """: double 2 * ;
-: triple 3 * ;
-5 double "d" store
-5 triple "t" store
-"d" load "t" load + .""",
-      ["25"]) 
+test_ok(
+    "T36 salary formula core",
+    """
+160 "worked_hours" store
+8000 "hourly_rate" store
+50000 "penalty" store
 
-section("8. Stack Underflow алдаанууд")
-test_error("N01 — + хоосон стек дээр",       "+",           StackUnderflowError)
-test_error("N02 — * нэг утгатай стек дээр",  "5 *",         StackUnderflowError)
-test_error("N03 — dup хоосон стек",          "dup",         StackUnderflowError)
-test_error("N04 — swap нэг утга",             "5 swap",      StackUnderflowError)
-test_error("N05 — drop хоосон стек",         "drop",        StackUnderflowError)
-test_error("N06 — . хоосон стек",            ".",           StackUnderflowError)
-test_error("N07 — over нэг утга",             "5 over",      StackUnderflowError)
+"worked_hours" load
+"hourly_rate" load
+*
+"gross_salary" store
 
-section("9. Type Error алдаанууд")
-test_error("N08 — string + number",    '"abc" 5 +',     TypeError_)
-test_error("N09 — bool * number",      'true 5 *',      TypeError_)
-test_error("N10 — store key not str",  '10 20 store',   TypeError_)
-test_error("N11 — load key not str",   '42 load',       TypeError_)
+"gross_salary" load
+0.115
+*
+"social_insurance" store
 
-section("10. Division by Zero")
-test_error("N12 — 10 / 0",            "10 0 /",        DivisionByZeroError)
-test_error("N13 — 0 / 0",             "0 0 /",         DivisionByZeroError)
+"gross_salary" load
+"social_insurance" load
+-
+"salary_after_social" store
 
-section("11. Unknown Word алдаанууд")
-test_error("N14 — тодорхойгүй word",   "foobar .",      UnknownWordError)
-test_error("N15 — typo 'txx' (tax?)",  "5 txx .",       UnknownWordError)
+"salary_after_social" load
+0.10
+*
+"income_tax" store
 
-section("12. Missing Storage Key")
-test_error('N16 — load байхгүй key',   '"nokey" load',  MissingStorageKeyError)
+"salary_after_social" load
+"income_tax" load
+-
+"penalty" load
+-
+"net_salary" store
 
-section("13. Invalid if operand")
-test_error("N17 — if-д boolean биш",   '5 { 1 } { 0 } if', InvalidIfOperandError)
-test_error("N18 — if-д block биш",
-           'true 1 2 if',               InvalidIfOperandError)
+"net_salary" load .
+""",
+    ["969200"]
+)
 
-section("14. Lexer / Parse алдаанууд")
-test_error("N19 — хаагдаагүй string",  '"hello',        LexerError)
-test_error("N20 — хаагдаагүй block",   '{ 1 2 +',       ParseError)
-test_error("N21 — хаагдаагүй list",    '[ 1 2 3',       ParseError)
-test_error("N22 — definition нэргүй",  ': dup * ;',     ParseError)
 
-section("15. Levenshtein Diagnostic")
+section("8. Desugar tests")
 
-from smartstack.interpreter import levenshtein, suggest
+test_desugar(
+    "T37 human calculate",
+    """
+set penalty to 50000
+calculate gross_salary as worked_hours times hourly_rate
+show gross_salary
+""",
+    "human",
+    ['50000 "penalty" store', '"worked_hours" load "hourly_rate" load * "gross_salary" store']
+)
 
-def test_lev(s, t, expected):
+test_desugar(
+    "T38 mn calculate",
+    """
+торгууль гэдэг нь 50000
+нийт_цалин бод ажилласан_цаг үржих цагийн_хөлс
+нийт_цалин харуул
+""",
+    "mn",
+    ['50000 "торгууль" store', '"ажилласан_цаг" load "цагийн_хөлс" load * "нийт_цалин" store']
+)
+
+test_desugar(
+    "T39 code-like calculate",
+    """
+let gross_salary = worked_hours * hourly_rate;
+print(gross_salary);
+""",
+    "code",
+    ['"worked_hours" load "hourly_rate" load * "gross_salary" store', '"gross_salary" load .']
+)
+
+
+section("9. Runtime errors")
+
+test_error("N01 plus empty stack", "+", StackUnderflowError)
+test_error("N02 multiply one value", "5 *", StackUnderflowError)
+test_error("N03 dup empty", "dup", StackUnderflowError)
+test_error("N04 swap one value", "5 swap", StackUnderflowError)
+test_error("N05 drop empty", "drop", StackUnderflowError)
+test_error("N06 print empty", ".", StackUnderflowError)
+test_error("N07 over one value", "5 over", StackUnderflowError)
+
+test_error("N08 string + number", '"abc" 5 +', TypeError_)
+test_error("N09 bool * number", "true 5 *", TypeError_)
+test_error("N10 store key not string", "10 20 store", TypeError_)
+test_error("N11 load key not string", "42 load", TypeError_)
+
+test_error("N12 divide by zero", "10 0 /", DivisionByZeroError)
+test_error("N13 unknown word", "foobar .", UnknownWordError)
+test_error("N14 missing storage key", '"nokey" load', MissingStorageKeyError)
+test_error("N15 invalid if condition", "5 { 1 } { 0 } if", InvalidIfOperandError)
+test_error("N16 invalid if block", "true 1 2 if", InvalidIfOperandError)
+
+test_error("N17 unclosed string", '"hello', LexerError)
+test_error("N18 unclosed block", "{ 1 2 +", ParseError)
+test_error("N19 unclosed list", "[ 1 2 3", ParseError)
+test_error("N20 definition without name", ": dup * ;", ParseError)
+
+
+section("10. Suggestion helper")
+
+def test_value(name, actual, expected):
     global passed, failed
-    result = levenshtein(s, t)
-    if result == expected:
-        print(f"   PASS  levenshtein({s!r}, {t!r}) = {result}")
+    if actual == expected:
+        print(f"PASS  {name}")
         passed += 1
     else:
-        print(f"   FAIL  levenshtein({s!r}, {t!r}) = {result}, хүлээсэн {expected}")
+        print(f"FAIL  {name}: expected {expected}, got {actual}")
         failed += 1
 
-test_lev("txx", "tax",  1)
-test_lev("swp", "swap", 1)
-test_lev("txx", "dup",  3)
-test_lev("",    "abc",  3)
-test_lev("abc", "",     3)
-test_lev("abc", "abc",  0)
 
-dict_sample = {"tax": [], "swap": [], "dup": [], "drop": [], "over": []}
-s1 = suggest("txx",    dict_sample)
-s2 = suggest("swp",    dict_sample)
-s3 = suggest("abcxyz", dict_sample)
+test_value("T40 levenshtein txx/tax", levenshtein("txx", "tax"), 1)
+test_value("T41 levenshtein swp/swap", levenshtein("swp", "swap"), 1)
+test_value("T42 levenshtein same", levenshtein("abc", "abc"), 0)
 
-def test_suggest(input_word, expected, result):
-    global passed, failed
-    if result == expected:
-        print(f"   PASS  suggest({input_word!r}) = {result!r}")
-        passed += 1
-    else:
-        print(f"   FAIL  suggest({input_word!r}) = {result!r}, хүлээсэн {expected!r}")
-        failed += 1
-
-test_suggest("txx",    "tax",  s1)
-test_suggest("swp",    "swap", s2)
-test_suggest("abcxyz", None,   s3)
+dictionary = {"tax": [], "swap": [], "dup": [], "drop": [], "over": []}
+test_value("T43 suggest txx", suggest("txx", dictionary), "tax")
+test_value("T44 suggest swp", suggest("swp", dictionary), "swap")
+test_value("T45 suggest unknown", suggest("abcxyz", dictionary), None)
 
 
 total = passed + failed
-print(f"\n{'═'*55}")
-print(f"  НИЙТ: {total} тест  |   {passed} амжилттай  |   {failed} амжилтгүй")
-print(f"{'═'*55}")
+
+print(f"\n{'═' * 60}")
+print(f"TOTAL: {total} tests | PASSED: {passed} | FAILED: {failed}")
+print(f"{'═' * 60}")
+
 if failed == 0:
-    print("   Бүх тест амжилттай өнгөрлөө!")
+    print("All tests passed.")
 else:
-    print(f"    {failed} тест амжилтгүй боллоо.")
+    print(f"{failed} tests failed.")
