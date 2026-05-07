@@ -319,6 +319,28 @@ class Interpreter:
         elif name == 'print':
             self.eval_builtin('.', node)
 
+        elif name == 'input':
+
+            key = self.state.pop('input')
+
+            if not isinstance(key, str):
+                raise TypeError_(
+                    "Type Error: input key string байх ёстой"
+                )
+
+            value = input(f"{key}: ")
+
+            # automatic number convert
+            try:
+                if '.' in value:
+                    value = float(value)
+                else:
+                    value = int(value)
+            except:
+                pass
+
+            self.state.storage[key] = value    
+
         else:
             raise SmartStackError(f"Тодорхойгүй builtin: '{name}'")
     def eval_word(self, node: WordNode):

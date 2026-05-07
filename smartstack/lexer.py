@@ -23,7 +23,7 @@ class TokenType(Enum):
 
 OPERATORS  = {'+', '-', '*', '/', '>', '<', '='}
 STACK_OPS  = {'dup', 'swap', 'drop', 'over'}
-BUILTINS   = {'if', 'store', 'load', 'map', 'filter', 'help', 'print'}
+BUILTINS   = {'if', 'store', 'load', 'map', 'filter', 'help', 'print', 'input'}
 BOOLEANS   = {'true', 'false'}
 
 

@@ -1,10 +1,20 @@
-set score to 85
+show "===== SALARY CALCULATION SYSTEM ====="
 
-show "Student score:"
-show score
+ask employee_name
+ask worked_hours
+ask hourly_rate
+ask penalty
 
-if score is greater than 60
-show "PASSED"
-otherwise
-show "FAILED"
-end
+calculate gross_salary as worked_hours times hourly_rate
+calculate social_insurance as gross_salary times 0.115
+calculate salary_after_social as gross_salary minus social_insurance
+calculate income_tax as salary_after_social times 0.10
+calculate net_salary as salary_after_social minus income_tax minus penalty
+
+show "===== RESULT ====="
+show employee_name
+show gross_salary
+show social_insurance
+show income_tax
+show penalty
+show net_salary

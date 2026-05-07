@@ -59,6 +59,12 @@ def desugar_human(source: str) -> str:
             result.append("}")
             result.append("if")
             continue
+        # ask salary
+        m = re.match(r"ask\s+(\w+)", line)
+        if m:
+            name = m.group(1)
+            result.append(f'"{name}" input')
+            continue
 
         # show something
         m = re.match(r"show\s+(.+)", line)
@@ -85,6 +91,12 @@ def desugar_mongolian(source: str) -> str:
         line = line.strip()
 
         if not line or line.startswith("#"):
+            continue
+                # цалин асуу
+        m = re.match(r"(\w+)\s+асуу", line)
+        if m:
+            name = m.group(1)
+            result.append(f'"{name}" input')
             continue
 
         # оноо гэдэг нь 85
@@ -145,6 +157,13 @@ def desugar_code_like(source: str) -> str:
         if m:
             name, value = m.groups()
             result.append(f'{value} "{name}" store')
+            continue
+
+                # input(salary)
+        m = re.match(r"input\((\w+)\)", line)
+        if m:
+            name = m.group(1)
+            result.append(f'"{name}" input')
             continue
 
         # print(score)
